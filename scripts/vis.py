@@ -1,50 +1,43 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
-import argparse
+import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 
-flow_file = "Data/AP01/Flow - 30-05-2024.txt"
-sleep_file = "Data/AP01/Sleep profile - 30-05-2024.txt"
+filename = "data/AP01/Flow - 30-05-2024.txt"
 
-def extractor(file, save_path=None):
-    meta = {}
-    
-    with open(file, "r") as f:
-        for _ in range(1, 5):
-            line = f.readline()
-            row = line.split(":", 1)
-            meta[row[0]] = row[1]
-        
-        lines = f.readlines()
-        table = []
-        headers = ["Date", "Time", "Value"]
+with open(filename, 'r') as f:
+    lines = f.readlines()
 
-        for i in range(7, len(lines)):
-            t = lines[i].split(" ")
-            t[1] = "".join(t[1][:-5]) # im ignoring the milliseconds
-            t[2] = "".join(t[2][:-2])
-            table.append(t)
-        
-        df = pd.DataFrame(table, columns=headers)
+data_lines = lines[7:]
+data = []
+for line in data_lines:
+    parts = line.strip().split(';')
+    if len(parts) == 2:
+        data.append([parts[0].strip(), parts[1].strip()])
 
-        if save_path is not None and os.path.exists(file) == False:
-            df.to_csv(save_path) 
+df = pd.DataFrame(data, columns=['RawTime', 'Value'])
+df['Value'] = pd.to_numeric(df['Value'])
 
-    return (df, meta)
+df['RawTime'] = df['RawTime'].str.replace(',', '.')
+df['Timestamp'] = pd.to_datetime(df['RawTime'], format='%d.%m.%Y %H:%M:%S.%f')
 
-def sampler(df, sample_rate):
-    indices = np.arange(0, len(df) - sample_rate, sample_rate)
-    return df.iloc[indices,:] # plot based on seconds
+start_time = df['Timestamp'].iloc[0]
+end_time = start_time + pd.Timedelta(seconds=5)
 
-df_flow, meta_flow = extractor(flow_file, "AP01_FLOW.csv")
-df_sleep, meta_sleep = extractor(sleep_file, "AP01_SLEEP.csv")
+df_subset = df[(df['Timestamp'] >= start_time) & (df['Timestamp'] <= end_time)]
 
-sampler(df_flow, 32)
+fig, ax = plt.subplots(figsize=(15, 6))
+ax.plot(df_subset['Timestamp'], df_subset['Value'])
 
-# df_synchro = df_flow[df_flow["Time"] == df_sleep["Time"]]
-# print(df_synchro.head())
-# plt.plot(df_flow['Time'].head(100), df_flow['Value'].head(100))
+ticks = pd.date_range(start=start_time, end=end_time, periods=35)
+ax.set_xticks(ticks)
 
-# plt.xticks(rotation=90)
-# plt.show()
+def format_func(x, pos):
+    dt = mdates.num2date(x)
+    return f"{dt.strftime('%H:%M:%S')},{dt.microsecond // 1000:03d}"
+
+ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.show()
