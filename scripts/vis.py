@@ -61,7 +61,7 @@ if __name__ == "__main__":
     ap_path = args.name
     ap_name = os.path.basename(os.path.normpath(ap_path))
     temp_out_path = os.path.join("Plots_Output", ap_name)
-    vis_out_path = "../Visualizations"
+    vis_out_path = "Visualizations"
 
     os.makedirs(temp_out_path, exist_ok=True)
     os.makedirs(vis_out_path, exist_ok=True)

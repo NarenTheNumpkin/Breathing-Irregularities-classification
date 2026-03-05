@@ -43,7 +43,7 @@ class Trainer:
         self.optimizer = optimizer
         self.loss_fn = loss_fn
 
-    def train(self, train_loader, epochs=10):
+    def train(self, train_loader, epochs=20):
         self.model.train()
         for epoch in range(epochs):
             for inputs, targets in train_loader:
