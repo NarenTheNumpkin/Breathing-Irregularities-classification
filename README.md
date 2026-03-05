@@ -33,3 +33,7 @@ Loss function: CrossEntropy
 
 GPU: MPS
 
+# Acknowledgment 
+
+I have taken the help of Gemini to write some of the code.
+
